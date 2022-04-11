@@ -27,7 +27,7 @@
             </tr>
         </tfoot>
     </table>
-    
+
     <div id="modal-form" class="modal fade" role="dialog" data-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -36,11 +36,13 @@
                     <form method="post">
                         <div class="form-group">
                             <label for="cpf">CPF</label>
-                            <input class="form-control" type="text" id="cpf" name="cpf">	
+                            <input class="form-control" type="text" id="cpf" name="cpf">
+                            <div class="erro-cpf"></div>
 			            </div>
                         <div class="form-group">
                             <label for="nome">NOME</label>
-                            <input class="form-control" type="text" id="nome" name="nome">	
+                            <input class="form-control" type="text" id="nome" name="nome">
+                            <div class="erro-nome"></div>
                         </div>
                         <button type="submit" class="btn btn-sm btn-primary"></button>
                     </form>
@@ -50,7 +52,7 @@
                 </div>
             </div>
         </div>
-    </div>    
+    </div>
 
     <div id="modal" class="modal fade" role="dialog" data-backdrop="static">
         <div class="modal-dialog">
@@ -68,21 +70,39 @@ const tabela = $('#tabela').DataTable( {
     "responsive": true,
     "autoWidth": false,
     "columnDefs": [{
-    "targets": [ 0, 1, 2, 3],
+    "targets": [1, 2, 3],
     "orderable": false
     }],
     "ajax": {
         "method": "POST",
-        "url": "http://192.168.1.2:8080/pessoas/read",
+        "url": "{{ route('read') }}",
     },
     "columns": [
-        {"data":"ID"},
-        {"data":"CPF"},
-        {"data":"NOME"},
-        {"data":"AÇÕES"}
+        {
+            "data":"id"
+        },
+        {
+            "data":"cpf"
+        },
+        {
+            "data":"nome"
+        },
+        {
+            "data": function (data) {
+                let html = ''
+
+                html += `<button id="${data.id}" class="btn btn-sm btn-primary" onclick="editar('${data.id}')">
+                    <i class="far fa-edit fa-lg"></i></button>`
+                html += `<button id="row_${data.id}" class="btn btn-sm btn-danger mx-1"
+                    onclick="deletar('${data.id}')">
+                        <i class="far fa-trash-alt fa-lg"></i></button>`
+
+                return html
+            }
+        }
     ],
-    "order": [[ 0, "desc" ]],
-    "lengthMenu": [[5, 10, 15], [5, 10, 15]],
+    "order": [0, "desc"],
+    "lengthMenu": [5, 10, 15],
     "pagingType": "full_numbers",
     "language": {
         "infoFiltered":   "(filtrado do total de _MAX_ entradas)",
@@ -98,7 +118,7 @@ const tabela = $('#tabela').DataTable( {
         "next":  "›",
         "previous": "‹"
         }
-    },   
+    },
 });
 
 function fechar() {
@@ -112,6 +132,8 @@ function fecharForm() {
     $('#modal-form').find('form input[name=id]').remove()
     $('#modal-form').find('form input[name="cpf"]').val('')
     $('#modal-form').find('form input[name="nome"]').val('')
+    $('.erro-cpf').text('')
+    $('.erro-nome').text('')
     $('#modal-form').find('form button').html('')
     $('#modal-form').find('form').off('submit')
 }
@@ -130,23 +152,26 @@ function adicionarPessoa(e) {
 
     $.ajax ({
         'method': 'POST',
-        'url': 'http://192.168.1.2:8080/pessoas/create',
+        'url': "{{ route('create') }}",
         'data': {'cpf':cpf, 'nome':nome},
-        'success': function(resposta) {
-            if (resposta === 'dados cadastrados com sucesso !!!') {
-                tabela.ajax.reload()
-                $('.mensagem').prepend(`<div class="alert alert-success" role="alert">${resposta}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`)
-            } else {
-                $('.mensagem').prepend(`<div class="alert alert-danger" role="alert">${resposta}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`)
-            }
-            fecharForm()                        
+        'success': function() {
+            tabela.ajax.reload()
+            $('.mensagem').prepend(`<div class="alert alert-success" role="alert">
+            dados cadastrados com sucesso !!!<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span></button></div>`)
+            fecharForm()
+        },
+        'error': function(resposta) {
+            let {cpf, nome} = resposta.responseJSON
+            $('.erro-cpf').text(cpf)
+            $('.erro-nome').text(nome)
         }
     })
 }
 
 function editar(id) {
-    const cpf = $(`#${id}`).find('td:eq(1)').html()
-    const nome = $(`#${id}`).find('td:eq(2)').html()
+    const cpf = $(`#${id}`).parents('tr').find('td:eq(1)').html()
+    const nome = $(`#${id}`).parents('tr').find('td:eq(2)').html()
 
     $('#modal-form').find('.modal-header').html('EDITAR PESSOA')
     $('#modal-form').find('form').prepend('<input type="hidden" name="id">')
@@ -166,18 +191,21 @@ function editarPessoa(e) {
 
     $.ajax ({
         'method': 'POST',
-        'url': 'http://192.168.1.2:8080/pessoas/update',
+        'url': "{{ route('update') }}",
         'data': {'id':id, 'cpf':cpf, 'nome':nome},
-        'success': function(resposta) {
-            if (resposta === 'dados atualizados com sucesso !!!') {
-                tabela.cell($(`#${id}`), 0).data(id).draw(false)
-                tabela.cell($(`#${id}`), 1).data(cpf).draw(false)
-                tabela.cell($(`#${id}`), 2).data(nome).draw(false)
-                $('.mensagem').prepend(`<div class="alert alert-success" role="alert">${resposta}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`)
-            } else {
-                $('.mensagem').prepend(`<div class="alert alert-danger" role="alert">${resposta}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`)
-            } 
+        'success': function() {
+            tabela.cell($(`#${id}`).parents('tr'), 0).data(id).draw(false)
+            tabela.cell($(`#${id}`).parents('tr'), 1).data(cpf).draw(false)
+            tabela.cell($(`#${id}`).parents('tr'), 2).data(nome).draw(false)
+            $('.mensagem').prepend(`<div class="alert alert-success" role="alert">
+            dados atualizados com sucesso !!!<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span></button></div>`)
             fecharForm()
+        },
+        'error': function(resposta) {
+            let {cpf, nome} = resposta.responseJSON
+            $('.erro-cpf').text(cpf)
+            $('.erro-nome').text(nome)
         }
     })
 }
@@ -191,12 +219,11 @@ function deletar(id) {
 function deletarPessoa(id) {
     $.ajax({
         'method': 'POST',
-        'url': 'http://192.168.1.2:8080/pessoas/delete',
+        'url': "{{ route('delete') }}",
         'data': {'id': id},
-        'success': function(resposta) {                   
-            tabela.row(`#${id}`).remove().draw(false);
+        'success': function() {
+            tabela.row($(`#${id}`).parents('tr')).remove().draw(false)
             fechar()
-            $('.mensagem').prepend(`<div class="alert alert-success" role="alert">${resposta}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`)
         }
     })
 }

@@ -2,85 +2,64 @@
 
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
-use Exception;
-use DB;
+use App\Pessoa;
 
-class HomeController extends Controller 
+class HomeController extends Controller
 {
-    public function index() 
+    public function index()
     {
         return view('home');
     }
 
-    public function create(Request $r) 
+    public function create(Request $req)
     {
-        if ($r->has(['cpf', 'nome'])) {
+        $rules = [
+            'cpf' => 'required|min:14|max:14|unique:pessoas',
+            'nome' => 'required|min:3|max:100'
+        ];
 
-            $cpf = $r->input('cpf');
-            $nome = $r->input('nome');
+        $messages = [
+            'cpf.unique' => 'Já existe uma pessoa cadastrada com esse cpf',
+            'min' => 'O campo deve ter no mínimo 14 caracteres',
+            'max' => 'O campo deve ter no máximo 14 caracteres',
+            'required' => 'Campo obrigatório',
+        ];
 
-            try {
-                if (count(DB::select('select cpf from pessoas where cpf = ?', [$cpf])) == 0 ) {
-                    DB::insert('insert into pessoas (cpf, nome) values (?, ?)', [$cpf, $nome]);
-                    echo "dados cadastrados com sucesso !!!";
-                } else {
-                    throw new Exception('cpf já se encontra cadastrado !!!');
-                }
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
+        $this->validate($req, $rules, $messages);
+
+        Pessoa::create($req->all());
     }
 
-    public function read() 
+    public function read()
     {
-        $array = ['data' => []];
-
-        $pessoas = DB::select('select * from pessoas');
-
-        foreach($pessoas as $pessoa) {
-            $array['data'][] = [
-                'DT_RowId' => $pessoa->id,
-                'ID' => $pessoa->id, 
-                'CPF' => $pessoa->cpf,
-                'NOME' => $pessoa->nome,
-                'AÇÕES' => '<button class="btn btn-sm btn-primary" onclick="editar('.$pessoa->id.')"><i class="far fa-edit fa-lg"></i></button> <button class="btn btn-sm btn-danger" onclick="deletar('.$pessoa->id.')"><i class="far fa-trash-alt fa-lg"></i></button>'
-            ];
-        }
-
-        echo json_encode($array);
+        return ['data' => Pessoa::all()];
     }
 
-    public function update(Request $r) 
+    public function update(Request $req)
     {
-        if ($r->has(['cpf', 'nome'])) {
+        $id = $req->input('id');
 
-            $id = $r->input('id');
-            $cpf = $r->input('cpf');
-            $nome = $r->input('nome');
+        $rules = [
+            'cpf' => 'required|min:14|max:14|unique:pessoas,cpf,'.$id,
+            'nome' => 'required|min:3|max:100'
+        ];
 
-            try {
-                if ((count(DB::select('select cpf from pessoas where cpf = ? and id = ?', [$cpf, $id])) == 1) || (count(DB::select('select cpf from pessoas where cpf = ?', [$cpf])) == 0 )) {
-                    DB::update('update pessoas set cpf = ?, nome = ? where id = ?', [$cpf, $nome, $id]);
-                    echo "dados atualizados com sucesso !!!";
-                } else {
-                    throw new Exception('cpf já se encontra cadastrado !!!');
-                }
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
+        $messages = [
+            'cpf.unique' => 'Já existe uma pessoa cadastrada com esse cpf',
+            'min' => 'O campo deve ter no mínimo 14 caracteres',
+            'max' => 'O campo deve ter no máximo 14 caracteres',
+            'required' => 'Campo obrigatório',
+        ];
+
+        $this->validate($req, $rules, $messages);
+
+        Pessoa::find($id)->update($req->all());
     }
 
-    public function delete(Request $r) 
+    public function delete(Request $req)
     {
-        if ($r->has(['id'])) { 
+        $id = $req->input('id');
 
-            $id = $r->input('id');
-
-            DB::delete('delete from pessoas where id = ?', [$id]);
-
-            echo 'Excluida com sucesso !!!';
-        }
+        Pessoa::find($id)->delete();
     }
 }
