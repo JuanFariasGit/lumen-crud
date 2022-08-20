@@ -37,12 +37,12 @@
                         <div class="form-group">
                             <label for="cpf">CPF</label>
                             <input class="form-control" type="text" id="cpf" name="cpf">
-                            <div class="erro-cpf"></div>
+                            <div id="erro-cpf" class="invalid-feedback"></div>
 			            </div>
                         <div class="form-group">
                             <label for="nome">NOME</label>
                             <input class="form-control" type="text" id="nome" name="nome">
-                            <div class="erro-nome"></div>
+                            <div id="erro-nome" class="invalid-feedback"></div>
                         </div>
                         <button type="submit" class="btn btn-sm btn-primary"></button>
                     </form>
@@ -127,13 +127,20 @@ function fechar() {
 }
 
 function fecharForm() {
+    const form = new FormData(document.querySelector("#modal-form form"))
     $('#modal-form').modal('hide')
     $('#modal-form').find('.modal-header').html('')
-    $('#modal-form').find('form input[name=id]').remove()
-    $('#modal-form').find('form input[name="cpf"]').val('')
-    $('#modal-form').find('form input[name="nome"]').val('')
-    $('.erro-cpf').text('')
-    $('.erro-nome').text('')
+
+    for (let key of form.keys()) {
+        if (key != "id") {
+            $('#modal-form').find(`form input[name="${key}"]`).val('')
+            $(`#erro-${key}`).text('')
+            $(`[name="${key}"]`).removeClass('is-invalid')
+        } else {
+            $('#modal-form').find('form input[name=id]').remove()
+        }
+    }
+    
     $('#modal-form').find('form button').html('')
     $('#modal-form').find('form').off('submit')
 }
@@ -167,7 +174,12 @@ function adicionarPessoa(e) {
         },
         'error': function(resposta) {
             for (let key of form.keys()) {
-                $(`.erro-${key}`).text(resposta.responseJSON[key])
+                $(`#erro-${key}`).text(resposta.responseJSON[key])
+                if (resposta.responseJSON[key]) {
+                    document.querySelector(`[name="${key}"]`).classList.add('is-invalid')
+                } else {
+                    document.querySelector(`[name="${key}"]`).classList.remove('is-invalid')
+                }
             }
         }
     })
@@ -211,7 +223,12 @@ function editarPessoa(e) {
         },
         'error': function(resposta) {
             for (let key of form.keys()) {
-                $(`.erro-${key}`).text(resposta.responseJSON[key])
+                $(`#erro-${key}`).text(resposta.responseJSON[key])
+                if (resposta.responseJSON[key]) {
+                    document.querySelector(`[name="${key}"]`).classList.add('is-invalid')
+                } else {
+                    document.querySelector(`[name="${key}"]`).classList.remove('is-invalid')
+                }
             }
         }
     })
