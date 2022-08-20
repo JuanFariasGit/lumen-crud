@@ -166,9 +166,9 @@ function adicionarPessoa(e) {
             fecharForm()
         },
         'error': function(resposta) {
-            let {cpf, nome} = resposta.responseJSON
-            $('.erro-cpf').text(cpf)
-            $('.erro-nome').text(nome)
+            for (let key of form.keys()) {
+                $(`.erro-${key}`).text(resposta.responseJSON[key])
+            }
         }
     })
 }
@@ -210,9 +210,9 @@ function editarPessoa(e) {
             fecharForm()
         },
         'error': function(resposta) {
-            let {cpf, nome} = resposta.responseJSON
-            $('.erro-cpf').text(cpf)
-            $('.erro-nome').text(nome)
+            for (let key of form.keys()) {
+                $(`.erro-${key}`).text(resposta.responseJSON[key])
+            }
         }
     })
 }
