@@ -147,13 +147,17 @@ function adicionar() {
 
 function adicionarPessoa(e) {
     e.preventDefault()
-    const cpf = $(this).find('input[name="cpf"]').val()
-    const nome = $(this).find('input[name="nome"]').val()
+    const form = new FormData(document.querySelector("#modal-form form"))
+    const data = {};
+
+    for (let key of form.keys()) {
+        data[key] = form.get(key)
+    }
 
     $.ajax ({
         'method': 'POST',
         'url': "{{ route('create') }}",
-        'data': {'cpf':cpf, 'nome':nome},
+        'data': data,
         'success': function() {
             tabela.ajax.reload()
             $('.mensagem').prepend(`<div class="alert alert-success" role="alert">
@@ -185,18 +189,21 @@ function editar(id) {
 
 function editarPessoa(e) {
     e.preventDefault()
-    const id = $(this).find('input[name="id"]').val()
-    const cpf = $(this).find('input[name="cpf"]').val()
-    const nome = $(this).find('input[name="nome"]').val()
+    const form = new FormData(document.querySelector("#modal-form form"))
+    const data = {}
+
+    for (let key of form.keys()) {
+        data[key] = form.get(key)
+    }
 
     $.ajax ({
         'method': 'POST',
         'url': "{{ route('update') }}",
-        'data': {'id':id, 'cpf':cpf, 'nome':nome},
+        'data': data,
         'success': function() {
-            tabela.cell($(`#${id}`).parents('tr'), 0).data(id).draw(false)
-            tabela.cell($(`#${id}`).parents('tr'), 1).data(cpf).draw(false)
-            tabela.cell($(`#${id}`).parents('tr'), 2).data(nome).draw(false)
+            tabela.cell($(`#${data.id}`).parents('tr'), 0).data(data.id).draw(false)
+            tabela.cell($(`#${data.id}`).parents('tr'), 1).data(data.cpf).draw(false)
+            tabela.cell($(`#${data.id}`).parents('tr'), 2).data(data.nome).draw(false)
             $('.mensagem').prepend(`<div class="alert alert-success" role="alert">
             dados atualizados com sucesso !!!<button type="button" class="close" data-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span></button></div>`)
